@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+    <channel>
+        <title>Your Title</title>
+		<description>Description of your RSS feed.</description>
+        <language>en-us</language>
+		<link>https://yourwebsite.com/rss.xml</link>
+		<atom:link href="https://yourwebsite.com/rss.xml" rel="self" type="application/rss+xml"/>
+    
+        <!-- BLOGI -->
+
+<item>
+<title>Example post</title>
+<guid>https://yourwebsite.com/blog/example-post</guid>
+<pubDate>Wed, 28 Oct 2020 01:37:26 +0200</pubDate>
+<description><![CDATA[
+<p>This is an example post made using blogi.</p>
+]]></description>
+</item>
+
+
+    </channel>
+</rss>
+
+

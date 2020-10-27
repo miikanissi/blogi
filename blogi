@@ -1,0 +1,79 @@
+#!/bin/bash
+# Blog system by Miika Nissi
+
+name="Your Name"
+webdir="$PWD"
+website="https://yourwebsite.com/" # Keep a trailing slash.
+css="../style.css"
+indexfile="blogindex.html"
+rssfile="rss.xml"
+
+[ -z "$EDITOR" ] && EDITOR="vim"
+
+[ ! -d "$webdir/blog/.drafts" ] &&
+read -erp "Initialize blog in $webdir?" ask &&
+	if [ "$ask" = "y" ]; then
+	printf "Initializing blog system...\\n"
+	mkdir -pv "$webdir/blog/.drafts" || printf "Error. Do you have write permissions in this directory?\\n"
+	echo "Options +Indexes" > "$webdir/blog/.htaccess"
+else
+	exit
+fi
+
+newpost() { read -erp "Give a title for your post:
+	" title
+	echo "$title" | grep "\"" >/dev/null && printf "Double quotation marks (\") are not allowed in entry titles.\\n" && exit
+	url="$(echo "$title" | iconv -cf UTF-8 -t ASCII//TRANSLIT | tr -d '[:punct:]' | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | sed "s/-\+/-/g;s/\(^-\|-\$\)//g")"
+	echo "AddDescription \"$title\" \"$url.html\"" >> "$webdir/blog/.htaccess" || { echo "Error: Is htaccess writeable?"; exit; }
+	[ -f "$webdir/blog/.drafts/$url.html" ] && echo "There is already an existing draft entry of that same name/URL." && exit
+	[ -f "$webdir/blog/$url.html" ] && echo "There is already an existing published entry of that same name/URL." && exit
+	$EDITOR "$webdir/blog/.drafts/$url.html" ;}
+
+listandReturn() { printf "Listing contents of %s.\\n" "$1"
+	ls -rc "$1" | awk -F '/' '{print $NF}' | nl
+	read -erp "Pick an entry by number to $2, or press ctrl-c to cancel. " number
+	chosen="$(ls -rc "$1" | nl | grep -w  "$number" | awk '{print $2}')"
+	basefile="$(basename "$chosen")" && base="${basefile%.*}" ;}
+
+publish() { \
+	delete
+	htaccessentry=$(grep "$basefile" "$webdir/blog/.htaccess")
+	realname="$(echo "$htaccessentry" | cut -d'"' -f2)"
+	rssdate="$(grep "$basefile" blog/.htaccess | sed "s/.*\.html\"* *#*//g" | tr -d '\n')"
+	[ -z "$rssdate" ] && rssdate="$(LC_TIME=en_US date '+%a, %d %b %Y %H:%M:%S %z')" # RSS date formats must comply with standards to validate.
+	webdate="$(date '+%a, %d %b %Y %H:%M:%S %z')" # But this visible date you can set to any format.
+	tmpdir=$(mktemp -d)
+
+  # basefile for posts
+	printf "<!DOCTYPE html>\\n<html lang=\"en\">\\n<head>\\n<title>%s</title>\\n<link rel='stylesheet' type='text/css' href='%s'/>\\n<meta charset='utf-8'/>\\n<meta name='description' content='This website is for %s'/>\\n<meta name='viewport' content='width=device-width, initial-scale=1'/>\\n<meta http-equiv='X-UA-Compatible' content='IE=edge'/>\\n<meta name='keywords' content='resume, CV, %s, blog, blogpage'/>\\n<meta name='author' content='%s'/>\\n<link rel='icon' type='image/png' href='images/favicon.png'/>\\n</head>\\n<body>\\n<a href='%s%s'>Back</a>\\n<h1>%s</h1>\\n%s\\n<footer>by <strong><a href='%s'>%s</a></strong></footer>\\n</body>\\n\\n</html>" "$realname" "$css" "$name" "$name" "$name" "$website" "$indexfile" "$realname" "$(cat "$webdir/blog/.drafts/$basefile")" "$website" "$name" > "$webdir/blog/$basefile"
+	
+  # adds content to basefile and writes it in rss and index file
+  printf "\\n<item>\\n<title>%s</title>\\n<guid>%sblog/%s</guid>\\n<pubDate>%s</pubDate>\\n<description><![CDATA[\\n%s\\n]]></description>\\n</item>\\n\\n" "$realname" "$website" "$base" "$rssdate" "$(cat "$webdir/blog/.drafts/$basefile")" >  "$tmpdir/rss"
+	printf "<li>%s &ndash; <a href=\"blog/%s\">%s</a></li>\\n" "$(date '+%Y %b %d')" "$basefile" "$realname" > "$tmpdir/index"
+	sed -i "/<!-- BLOGI -->/r $tmpdir/rss" "$rssfile"
+	sed -i "/<!-- BLOGI -->/r $tmpdir/index" "$indexfile"
+	sed -i "/ \"$base.html\"/d" "$webdir/blog/.htaccess"
+	echo "AddDescription \"$realname\" \"$basefile\" #$rssdate" >> "$webdir/blog/.htaccess"
+	rm -f "$webdir/blog/.drafts/$chosen"
+}
+
+confirm() { read -erp "Really $1 \"$base\"? (y/N) " choice && echo "$choice" | grep -i "^y$" >/dev/null || exit 1 ;}
+
+delete() { \
+	sed -i "/<item/{:a;N;/<\\/item>/!ba};/$base<\\/guid/d" $rssfile
+	sed -i "/<li>.*<a href=\"blog\\/$base.html\">/d" $indexfile
+	rm "$webdir/blog/$basefile" 2>/dev/null && printf "Old blog entry removed.\\n" ;}
+
+revise() { awk '/^<small>\[/{flag=1;next}/<footer>/{flag=0}flag' "$webdir/blog/$chosen" > "$webdir/blog/.drafts/$basefile"
+	"$EDITOR" "$webdir/blog/.drafts/$basefile"
+	printf "Revision stored in blog/.drafts. Publish as normal entry when desired.\\n" ;}
+
+case "$1" in
+	n*) newpost ;;
+	e*) listandReturn "$webdir"/blog/.drafts/ edit && "$EDITOR" "$webdir/blog/.drafts/$chosen" ;;
+	p*) listandReturn "$webdir"/blog/.drafts/ publish && publish ;;
+	t*) listandReturn "$webdir"/blog/.drafts/ trash && confirm trash && rm -f "$webdir/blog/.drafts/$chosen" && sed -i "/ \"$base.html\"/d" "$webdir/blog/.htaccess" ; printf "Draft deleted.\\n" ;;
+	d*) listandReturn "$webdir"/blog/ delete && confirm delete && delete && sed -i "/ \"$base.html\"/d" "$webdir/blog/.htaccess" ;;
+	r*) listandReturn "$webdir"/blog/ revise && revise ;;
+	*) printf "Blog system by Miika Nissi <miika@miikanissi.com>\\nUsage:\\n  blogi n:\\tnew draft\\n  blogi e:\\tedit draft\\n  blogi p:\\tpublish/finalize draft\\n  blogi r:\\trevise published entry\\n  blogi t:\\tdiscard draft\\n  blogi d:\\tdelete published entry\\n\\nBe sure to have the following pattern added to your RSS feed, blog file and blog index:\\n\\n<!-- BLOGI -->\\n\\nNew content will be added directly below that sequence. This is required.\\n" ;;
+esac
