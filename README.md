@@ -5,7 +5,7 @@ I wanted my personal website to be a minimal static website which serves content
 
 ## Features of `blogi`
 
-`Blogi` is a small shell script that let's you write blog posts on a website. The main features are:
+`Blogi` is a small bash script that let's you write blog posts on a website. The main features are:
 
 - Index page for all of your blog posts. [Example on my website.](https://miikanissi.com/blogindex)
 - Each blog post has their own standalone page.
