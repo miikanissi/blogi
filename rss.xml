@@ -10,13 +10,21 @@
         <!-- BLOGI -->
 
 <item>
-<title>Example post</title>
-<guid>https://yourwebsite.com/blog/example-post</guid>
-<pubDate>Wed, 28 Oct 2020 01:37:26 +0200</pubDate>
+<title>This is an example post</title>
+<guid>https://yourwebsite.com/blog/this-is-an-example-post</guid>
+<pubDate>Wed, 28 Oct 2020 23:48:11 +0200</pubDate>
 <description><![CDATA[
-<p>This is an example post made using blogi.</p>
+<p>This is how an example post looks.</p>
 ]]></description>
 </item>
+
+
+
+
+
+
+
+
 
 
     </channel>
