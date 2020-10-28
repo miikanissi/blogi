@@ -14,4 +14,4 @@ I wanted my personal website to be a minimal static website which serves content
 - Each post can also be revised after publishing.
 
 ## Credits
-Main credits for inspiration go to [Luke Smith.] (https://github.com/LukeSmithxyz/lb)
+Main credits for inspiration go to [Luke Smith.](https://github.com/LukeSmithxyz/lb)
