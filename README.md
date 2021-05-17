@@ -1,3 +1,6 @@
+# DEPRECATED
+Use my new makefile based website generator instead: [mblog](https://github.com/miikanissi/mblog).
+
 # Blog system for my website :pencil2: :orange_book:
 This is how I create blog posts on my [personal website.](https://miikanissi.com)
 
